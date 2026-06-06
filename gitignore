@@ -1,0 +1,43 @@
+# ── OS FILES ──────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── EDITOR / IDE ──────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# ── LOGS ──────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── IF YOU EVER ADD NODE / NPM ────────────
+node_modules/
+package-lock.json
+yarn.lock
+.npm/
+
+# ── IF YOU EVER ADD A BUILD STEP ──────────
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# ── ENV / SECRETS ─────────────────────────
+.env
+.env.local
+.env.*
+
+# ── MISC ──────────────────────────────────
+*.bak
+*.tmp
+*.orig

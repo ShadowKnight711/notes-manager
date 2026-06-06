@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notes Manager v1.0.0</title>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ── TOKENS ── */
+:root {
+  --rail-bg:#7B2FBE; --rail-top:#5e1fa0; --sec-bg:#9B4DCA;
+  --pages-bg:#f3f2f1; --pages-border:#d4d2cf;
+  --pages-hover:#e8e6e3; --pages-active:#ffffff;
+  --pg-title:#1a1a1a; --pg-meta:#a09fa0;
+  --main-bg:#ffffff; --topbar-bg:#ffffff; --topbar-border:#d4d2cf;
+  --text:#37352f; --meta:#9b9b9b;
+  --card-bg:#f9f8f7; --card-border:#e0deda;
+  --card-hover-bg:#f0eaf8; --card-hover-border:#c4a0e6;
+  --hero-border:#f0eeeb;
+  --modal-bg:#ffffff; --modal-border:#d4d2cf; --modal-shadow:rgba(0,0,0,0.16);
+  --input-bg:#ffffff; --input-border:#d4d2cf;
+  --btn-bg:#ffffff; --btn-border:#d4d2cf; --btn-text:#37352f; --btn-hover:#f3f2f1;
+  --drop-border:#d4d2cf; --info-bg:#f3f2f1;
+  --bc-inactive:#a09fa0; --bc-sep:#ccc;
+  --body-color:#37352f;
+  --table-border:#e0deda; --table-head:#f3f2f1;
+  --code-bg:#f3f2f0; --bq-bg:#faf7ff;
+  --pdf-toolbar:#f3f2f1; --scroll-thumb:rgba(0,0,0,0.15);
+  --chip-docx-bg:#e8f0fe; --chip-docx:#1a73e8;
+  --chip-pdf-bg:#fde8e8;  --chip-pdf:#c0392b;
+  --chip-one-bg:#e8f8e8;  --chip-one:#2e7d32;
+  --collapse-btn:rgba(0,0,0,0.06); --collapse-btn-hover:rgba(0,0,0,0.12);
+  --danger-bg:#fff0f0; --warn-bg:#fff8ec;
+  --warn-border:#fde4a0; --warn-text:#7a5800;
+  --progress-bg:#e0deda; --progress-fill:#7B2FBE;
+}
+[data-theme="dark"] {
+  --rail-bg:#3d1466; --rail-top:#2d0f50; --sec-bg:#5a2d82;
+  --pages-bg:#1b1b2e; --pages-border:#2a2a3f;
+  --pages-hover:#242438; --pages-active:#111120;
+  --pg-title:#e0deff; --pg-meta:#686880;
+  --main-bg:#111120; --topbar-bg:#16162a; --topbar-border:#2a2a3f;
+  --text:#c8c6e8; --meta:#686880;
+  --card-bg:#1b1b2e; --card-border:#2a2a3f;
+  --card-hover-bg:#26264a; --card-hover-border:#7B2FBE;
+  --hero-border:#2a2a3f;
+  --modal-bg:#1b1b2e; --modal-border:#2a2a3f; --modal-shadow:rgba(0,0,0,0.5);
+  --input-bg:#24243a; --input-border:#3a3a54;
+  --btn-bg:#24243a; --btn-border:#3a3a54; --btn-text:#c8c6e8; --btn-hover:#2e2e4a;
+  --drop-border:#3a3a54; --info-bg:#24243a;
+  --bc-inactive:#686880; --bc-sep:#2a2a3f;
+  --body-color:#c8c6e8;
+  --table-border:#2a2a3f; --table-head:#1b1b2e;
+  --code-bg:#16162a; --bq-bg:#1b1b2e;
+  --pdf-toolbar:#1b1b2e; --scroll-thumb:rgba(255,255,255,0.1);
+  --chip-docx-bg:#1a2040; --chip-docx:#7eaaff;
+  --chip-pdf-bg:#3a1a1a;  --chip-pdf:#ff8a8a;
+  --chip-one-bg:#1a301a;  --chip-one:#81c784;
+  --collapse-btn:rgba(255,255,255,0.08); --collapse-btn-hover:rgba(255,255,255,0.18);
+  --danger-bg:#2a1010; --warn-bg:#2a200a;
+  --warn-border:#5a4500; --warn-text:#f0c040;
+  --progress-bg:#2a2a3f; --progress-fill:#9B4DCA;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--main-bg);color:var(--text);height:100vh;overflow:hidden;transition:background .25s,color .25s;}
+.app{display:flex;height:100vh;position:relative;}
+
+/* RAIL */
+.rail{width:58px;min-width:58px;background:var(--rail-bg);display:flex;flex-direction:column;align-items:center;overflow:hidden;z-index:10;flex-shrink:0;transition:width .22s ease,min-width .22s ease,background .25s;}
+.rail.collapsed{width:0;min-width:0;}
+.rail-logo{width:58px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--rail-top);flex-shrink:0;}
+.rail-logo-text{color:white;font-size:9.5px;font-weight:800;text-align:center;line-height:1.3;letter-spacing:-0.2px;}
+.rail-nb{width:58px;height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:3px;position:relative;flex-shrink:0;transition:background .12s;}
+.rail-nb:hover{background:rgba(255,255,255,.14);}
+.rail-nb.active{background:rgba(255,255,255,.22);}
+.rail-nb.active::after{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;background:white;border-radius:0 3px 3px 0;}
+.rail-nb-icon{font-size:20px;line-height:1;}
+.rail-nb-label{font-size:8.5px;color:rgba(255,255,255,.82);font-weight:600;text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px;}
+.rail-divider{width:32px;height:1px;background:rgba(255,255,255,.18);margin:3px auto;flex-shrink:0;}
+.rail-add{width:34px;height:34px;margin:4px auto;border:1.5px solid rgba(255,255,255,.38);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.7);font-size:18px;transition:all .12s;flex-shrink:0;}
+.rail-add:hover{background:rgba(255,255,255,.2);color:white;border-color:white;}
+.rail-spacer{flex:1;}
+.rail-bottom{padding:6px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.rail-icon-btn{width:40px;height:40px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.72);transition:all .12s;gap:2px;}
+.rail-icon-btn:hover{background:rgba(255,255,255,.18);color:white;}
+.rail-icon-btn span{font-size:7.5px;color:rgba(255,255,255,.55);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+
+/* TOGGLE / HAMBURGER */
+.panel-toggle{position:absolute;top:50%;transform:translateY(-50%);right:-16px;width:16px;height:44px;border-radius:0 6px 6px 0;background:var(--collapse-btn);border:1px solid var(--pages-border);border-left:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--pg-meta);z-index:50;transition:background .15s;user-select:none;}
+.panel-toggle:hover{background:var(--collapse-btn-hover);color:var(--pg-title);}
+#toggleRail{position:absolute;top:50%;transform:translateY(-50%);left:58px;width:14px;height:42px;border-radius:0 6px 6px 0;background:var(--rail-bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.7);z-index:50;transition:left .22s ease,background .25s;}
+#toggleRail:hover{background:var(--rail-top);color:white;}
+.hamburger{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:var(--pg-meta);background:transparent;border:none;transition:all .12s;flex-shrink:0;}
+.hamburger:hover{background:var(--btn-hover);color:var(--pg-title);}
+.hamburger.hidden{display:none;}
+
+/* TOOLTIP */
+.tip{position:relative;}
+.tip:hover::before{content:attr(data-tip);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:#111;color:white;font-size:12px;padding:5px 10px;border-radius:5px;white-space:nowrap;z-index:1000;pointer-events:none;font-weight:500;box-shadow:0 2px 10px rgba(0,0,0,.3);}
+
+/* SECTIONS */
+.sections-panel{width:192px;min-width:192px;background:var(--sec-bg);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0;transition:width .22s ease,min-width .22s ease,background .25s;}
+.sections-panel.collapsed{width:0;min-width:0;}
+.sec-header{padding:0 12px;height:52px;display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,.14);flex-shrink:0;}
+.sec-nb-name{font-size:13px;font-weight:700;color:white;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sec-list{flex:1;overflow-y:auto;padding:5px 0;}
+.sec-row{display:flex;align-items:center;cursor:pointer;position:relative;transition:background .1s;margin:1px 6px;border-radius:6px;}
+.sec-row:hover{background:rgba(255,255,255,.14);}
+.sec-row.active{background:rgba(255,255,255,.2);}
+.sec-row.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:white;border-radius:0 2px 2px 0;}
+.sec-colorbar{width:4px;height:26px;border-radius:2px;margin:0 8px;flex-shrink:0;}
+.sec-name{flex:1;font-size:13px;color:rgba(255,255,255,.92);font-weight:500;padding:8px 4px 8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sec-del{opacity:0;color:rgba(255,255,255,.45);font-size:11px;padding:4px 8px;border-radius:4px;flex-shrink:0;cursor:pointer;}
+.sec-row:hover .sec-del{opacity:1;}
+.sec-del:hover{background:rgba(0,0,0,.2);color:white;}
+.sec-add{display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:12.5px;color:rgba(255,255,255,.6);cursor:pointer;transition:all .1s;border-top:1px solid rgba(255,255,255,.1);}
+.sec-add:hover{color:white;background:rgba(255,255,255,.08);}
+.sec-bottom{padding:8px;display:flex;gap:5px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.14);}
+.sec-btn{flex:1;min-width:38px;padding:5px 2px;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:white;text-align:center;transition:all .12s;}
+.sec-btn:hover{background:rgba(255,255,255,.22);}
+
+/* PAGES */
+.pages-panel{width:216px;min-width:216px;background:var(--pages-bg);border-right:1px solid var(--pages-border);display:flex;flex-direction:column;overflow:hidden;position:relative;flex-shrink:0;transition:width .22s ease,min-width .22s ease,background .25s,border-color .25s;}
+.pages-panel.collapsed{width:0;min-width:0;border-right:none;}
+.pages-header{height:52px;padding:0 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--pages-border);flex-shrink:0;background:var(--pages-bg);}
+.pages-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#aaa;}
+.pages-sec-name{font-size:13px;font-weight:700;color:var(--pg-title);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pages-list{flex:1;overflow-y:auto;}
+.pg-row{display:flex;align-items:stretch;cursor:pointer;transition:background .1s;border-left:3px solid transparent;}
+.pg-row:hover{background:var(--pages-hover);}
+.pg-row.active{background:var(--pages-active);border-left-color:#7B2FBE;}
+.pg-inner{flex:1;min-width:0;padding:9px 10px 9px 8px;}
+.pg-title{font-size:13px;color:var(--pg-title);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pg-row.active .pg-title{color:#9B4DCA;font-weight:600;}
+.pg-date{font-size:10.5px;color:var(--pg-meta);margin-top:2px;}
+.pg-chip{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;display:inline-block;margin-top:3px;}
+.chip-docx{background:var(--chip-docx-bg);color:var(--chip-docx);}
+.chip-pdf{background:var(--chip-pdf-bg);color:var(--chip-pdf);}
+.chip-one{background:var(--chip-one-bg);color:var(--chip-one);}
+.pg-del{opacity:0;color:var(--pg-meta);font-size:12px;display:flex;align-items:center;padding:0 8px;cursor:pointer;flex-shrink:0;}
+.pg-row:hover .pg-del{opacity:1;}
+.pg-del:hover{color:#c0392b;}
+.pages-add{display:flex;align-items:center;gap:7px;padding:9px 14px;font-size:12.5px;color:var(--meta);cursor:pointer;border-top:1px solid var(--pages-border);transition:all .1s;}
+.pages-add:hover{background:var(--pages-hover);color:var(--pg-title);}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--main-bg);transition:background .25s;min-width:0;}
+.topbar{height:52px;border-bottom:1px solid var(--topbar-border);display:flex;align-items:center;padding:0 20px;gap:8px;flex-shrink:0;background:var(--topbar-bg);transition:background .25s,border-color .25s;}
+.breadcrumb{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--bc-inactive);min-width:0;flex:1;overflow:hidden;}
+.bc-link{cursor:pointer;color:var(--bc-inactive);transition:color .1s;white-space:nowrap;}
+.bc-link:hover{color:#9B4DCA;text-decoration:underline;}
+.bc-cur{color:var(--pg-title);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bc-sep{color:var(--bc-sep);font-size:11px;flex-shrink:0;}
+.topbar-right{display:flex;gap:7px;flex-shrink:0;align-items:center;}
+.tb-btn{padding:5px 13px;border-radius:5px;font-size:13px;border:1px solid var(--btn-border);background:var(--btn-bg);cursor:pointer;color:var(--btn-text);font-weight:500;transition:all .1s;}
+.tb-btn:hover{background:var(--btn-hover);}
+.tb-btn-primary{background:#7B2FBE;color:white;border-color:#7B2FBE;}
+.tb-btn-primary:hover{background:#6620a8;}
+.tb-btn-danger{color:#c0392b;border-color:#f5c6c6;}
+.tb-btn-danger:hover{background:var(--danger-bg);}
+.dark-toggle-btn{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;border:1px solid var(--btn-border);background:var(--btn-bg);transition:all .15s;}
+.dark-toggle-btn:hover{background:var(--btn-hover);}
+.content-scroll{flex:1;overflow-y:auto;}
+.content-area{padding:46px 68px;max-width:900px;margin:0 auto;}
+.init-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;color:var(--meta);}
+.spinner{width:32px;height:32px;border:3px solid var(--pages-border);border-top-color:#9B4DCA;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* WELCOME */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 52px);text-align:center;padding:40px 24px;}
+.welcome-logo{width:76px;height:76px;background:linear-gradient(135deg,#7B2FBE,#9B4DCA);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 22px;}
+.welcome h1{font-size:30px;font-weight:700;margin-bottom:10px;color:var(--pg-title);}
+.welcome > p{font-size:15px;color:var(--meta);margin-bottom:28px;max-width:420px;line-height:1.6;}
+.welcome-cards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;}
+.welcome-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:18px 20px;text-align:left;width:162px;cursor:pointer;transition:all .15s;}
+.welcome-card:hover{border-color:#9B4DCA;transform:translateY(-2px);box-shadow:0 6px 20px rgba(123,47,190,.12);}
+.wc-icon{font-size:26px;margin-bottom:10px;}
+.wc-title{font-size:13.5px;font-weight:700;color:var(--pg-title);margin-bottom:4px;}
+.wc-desc{font-size:12px;color:var(--meta);line-height:1.4;}
+.steps{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.step{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:14px 16px;width:148px;}
+.step-lbl{font-size:10px;font-weight:700;color:#9B4DCA;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;}
+.step p{font-size:12px;color:var(--text);line-height:1.45;}
+.overview-hero{margin-bottom:28px;padding-bottom:22px;border-bottom:1px solid var(--hero-border);}
+.overview-hero h1{font-size:32px;font-weight:700;margin-bottom:4px;color:var(--pg-title);}
+.overview-hero .meta{font-size:13.5px;color:var(--meta);margin-top:4px;}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;}
+.note-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:16px;cursor:pointer;transition:all .15s;position:relative;}
+.note-card:hover{background:var(--card-hover-bg);border-color:var(--card-hover-border);transform:translateY(-1px);box-shadow:0 4px 14px rgba(123,47,190,.1);}
+.nc-chip{position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;}
+.nc-icon{font-size:26px;margin-bottom:10px;}
+.nc-title{font-size:13px;font-weight:600;color:var(--pg-title);margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nc-date{font-size:11.5px;color:var(--meta);}
+.empty-state{text-align:center;padding:64px 24px;}
+.empty-state h2{font-size:20px;font-weight:600;margin-bottom:8px;color:var(--pg-title);}
+.empty-state p{font-size:14px;color:var(--meta);margin-bottom:20px;}
+
+/* PAGE VIEW */
+.page-view-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--hero-border);}
+.page-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:8px;cursor:pointer;transition:filter .1s;}
+.page-badge:hover{filter:brightness(.9);}
+.page-view-title{font-size:34px;font-weight:700;line-height:1.2;margin-bottom:8px;word-break:break-word;color:var(--pg-title);}
+.page-view-meta{font-size:12.5px;color:var(--meta);display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.file-chip{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;}
+.note-body{font-size:15.5px;line-height:1.8;color:var(--body-color);}
+.note-body h1{font-size:24px;font-weight:700;margin:1.4em 0 .5em;color:var(--pg-title);}
+.note-body h2{font-size:20px;font-weight:700;margin:1.2em 0 .45em;color:var(--pg-title);}
+.note-body h3{font-size:16.5px;font-weight:600;margin:1em 0 .4em;}
+.note-body p{margin:.5em 0;}
+.note-body ul,.note-body ol{margin:.5em 0 .5em 1.6em;}
+.note-body li{margin:.25em 0;}
+.note-body table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:14.5px;}
+.note-body td,.note-body th{border:1px solid var(--table-border);padding:8px 14px;}
+.note-body th{background:var(--table-head);font-weight:600;}
+.note-body strong,.note-body b{font-weight:700;}
+.note-body em,.note-body i{font-style:italic;}
+.note-body a{color:#9B4DCA;}
+.note-body img{max-width:100%;border-radius:6px;margin:.5em 0;}
+.note-body code{font-family:monospace;background:var(--code-bg);padding:1px 5px;border-radius:3px;font-size:13.5px;}
+.note-body pre{background:var(--code-bg);padding:14px;border-radius:6px;overflow-x:auto;margin:1em 0;}
+.note-body blockquote{border-left:3px solid #9B4DCA;margin:1em 0;padding:6px 16px;color:var(--meta);background:var(--bq-bg);border-radius:0 6px 6px 0;}
+.one-notice{display:flex;align-items:flex-start;gap:10px;background:var(--chip-one-bg);border:1px solid var(--chip-one);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--chip-one);line-height:1.5;}
+.one-preview{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:20px 24px;}
+.one-preview h3{font-size:15px;font-weight:700;margin-bottom:12px;color:var(--pg-title);}
+
+/* PDF */
+.pdf-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:10px 14px;background:var(--pdf-toolbar);border-radius:8px;flex-wrap:wrap;}
+.pdf-toolbar button{padding:5px 12px;border-radius:5px;border:1px solid var(--btn-border);background:var(--btn-bg);cursor:pointer;font-size:13px;color:var(--btn-text);font-weight:500;}
+.pdf-toolbar button:hover{background:var(--btn-hover);}
+.pdf-pg-info{font-size:13px;color:var(--meta);min-width:80px;text-align:center;}
+.pdf-zoom{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.pdf-zoom span{font-size:13px;color:var(--meta);min-width:44px;text-align:center;}
+.pdf-pages{display:flex;flex-direction:column;gap:16px;align-items:center;}
+.pdf-canvas-wrap{box-shadow:0 2px 18px rgba(0,0,0,.18);border-radius:4px;overflow:hidden;background:white;}
+.pdf-canvas-wrap canvas{display:block;}
+.pdf-loading{text-align:center;padding:48px;color:var(--meta);font-size:15px;}
+
+/* PROGRESS */
+.progress-bar-wrap{background:var(--progress-bg);border-radius:6px;height:6px;margin-bottom:6px;overflow:hidden;}
+.progress-bar{height:100%;width:0%;background:var(--progress-fill);border-radius:6px;transition:width .2s ease;}
+.progress-label{font-size:12.5px;color:var(--meta);text-align:center;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;z-index:300;}
+.modal{background:var(--modal-bg);border-radius:12px;padding:26px;width:480px;max-width:calc(100vw - 32px);max-height:90vh;overflow-y:auto;box-shadow:0 12px 48px var(--modal-shadow);border:1px solid var(--modal-border);transition:background .25s;}
+.modal-wide{width:560px;}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:18px;color:var(--pg-title);}
+.modal-label{font-size:11px;font-weight:700;color:var(--meta);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;}
+.modal input,.modal select{width:100%;padding:9px 12px;border:1px solid var(--input-border);border-radius:7px;font-size:14px;margin-bottom:16px;outline:none;font-family:inherit;background:var(--input-bg);color:var(--btn-text);}
+.modal input:focus,.modal select:focus{border-color:#9B4DCA;box-shadow:0 0 0 2.5px rgba(155,77,202,.2);}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.emoji-grid{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.emoji-opt{width:34px;height:34px;border:1.5px solid var(--input-border);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .1s;}
+.emoji-opt:hover,.emoji-opt.selected{border-color:#9B4DCA;background:rgba(155,77,202,.1);}
+.color-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:all .12s;}
+.color-opt:hover,.color-opt.selected{border-color:var(--pg-title);transform:scale(1.15);}
+.upload-filelist{background:var(--info-bg);border-radius:8px;padding:11px 14px;margin-bottom:16px;font-size:13px;color:var(--text);line-height:1.7;}
+.import-drop{border:2px dashed var(--drop-border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:16px;}
+.import-drop:hover,.import-drop.dragover{border-color:#9B4DCA;background:rgba(155,77,202,.06);}
+.import-drop .id-icon{font-size:30px;margin-bottom:8px;}
+.import-drop p{font-size:13px;color:var(--meta);line-height:1.5;}
+.import-drop strong{color:#9B4DCA;}
+.import-info{background:var(--info-bg);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:14px;}
+.import-warn{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--warn-text);margin-bottom:14px;}
+.radio-row{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.radio-opt{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1.5px solid var(--input-border);border-radius:10px;cursor:pointer;transition:border-color .1s,background .1s;width:100%;box-sizing:border-box;}
+.radio-opt:hover,.radio-opt.selected{border-color:#9B4DCA;background:rgba(155,77,202,.08);}
+.radio-opt input[type=radio]{margin-top:3px;accent-color:#9B4DCA;flex-shrink:0;width:16px;height:16px;cursor:pointer;}
+.radio-opt > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.radio-opt-label{font-size:13.5px;font-weight:600;color:var(--pg-title);line-height:1.3;word-break:break-word;}
+.radio-opt-desc{font-size:12.5px;color:var(--meta);line-height:1.5;word-break:break-word;white-space:normal;}
+.btn{padding:7px 16px;border-radius:6px;font-size:13px;border:1px solid var(--btn-border);background:var(--btn-bg);cursor:pointer;color:var(--btn-text);font-weight:500;transition:all .1s;}
+.btn:hover{background:var(--btn-hover);}
+.btn-primary{background:#7B2FBE;color:white;border-color:#7B2FBE;}
+.btn-primary:hover{background:#6620a8;}
+.btn-danger{color:#c0392b;border-color:#f5c6c6;}
+.btn-danger:hover{background:var(--danger-bg);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:white;padding:10px 20px;border-radius:8px;font-size:13.5px;font-weight:500;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.toast.success{background:#1a472a;}
+.toast.error{background:#6a1a1a;}
+
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px;}
+.sec-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);}
+
+
+/* ABOUT MODAL */
+.about-modal{max-width:480px;}
+.about-header{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.about-logo{width:56px;height:56px;background:linear-gradient(135deg,#7B2FBE,#9B4DCA);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.about-app-name{font-size:22px;font-weight:800;color:var(--pg-title);margin:0 0 4px;}
+.about-version{display:inline-block;background:rgba(123,47,190,.12);color:#7B2FBE;font-size:12px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid rgba(123,47,190,.25);}
+[data-theme="dark"] .about-version{background:rgba(155,77,202,.2);color:#b09fff;border-color:rgba(155,77,202,.35);}
+.about-tagline{font-size:13.5px;color:var(--meta);line-height:1.6;margin-bottom:16px;}
+.about-divider{height:1px;background:var(--hero-border);margin:16px 0;}
+.about-creator{display:flex;flex-direction:column;gap:10px;}
+.about-field{display:flex;align-items:baseline;gap:10px;font-size:13.5px;}
+.about-field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--meta);min-width:64px;flex-shrink:0;}
+.about-field-value{color:var(--pg-title);}
+.about-link{color:#7B2FBE;text-decoration:none;font-weight:500;word-break:break-all;}
+.about-link:hover{text-decoration:underline;}
+.about-features{display:flex;flex-direction:column;gap:6px;}
+.about-feature{font-size:12.5px;color:var(--meta);display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--card-bg);border-radius:6px;border:1px solid var(--card-border);}
+/* MOBILE NAV */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;z-index:200;background:var(--sec-bg);border-top:1px solid rgba(255,255,255,.15);flex-direction:row;}
+.mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;background:transparent;border:none;color:rgba(255,255,255,.6);font-size:10px;font-weight:600;letter-spacing:.02em;padding:6px 0;transition:color .15s;}
+.mob-tab svg{width:20px;height:20px;fill:currentColor;}
+.mob-tab.active,.mob-tab:hover{color:white;}
+.mob-tab.active{border-top:2px solid white;}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:190;}
+.mob-overlay.show{display:block;}
+.mob-drawer{display:none;position:fixed;top:0;bottom:58px;left:0;z-index:195;flex-direction:row;transform:translateX(-100%);transition:transform .25s ease;max-width:100vw;}
+.mob-drawer.open{transform:translateX(0);}
+.mob-drawer-sec{width:min(58vw,260px);background:var(--sec-bg);display:flex;flex-direction:column;overflow:hidden;}
+.mob-drawer-pg{width:min(52vw,230px);background:var(--pages-bg);border-right:1px solid var(--pages-border);display:flex;flex-direction:column;overflow:hidden;}
+.mob-drawer-hdr{height:52px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.14);font-size:13.5px;font-weight:700;color:white;flex-shrink:0;}
+.mob-drawer-pg .mob-drawer-hdr{border-bottom-color:var(--pages-border);color:var(--pg-title);}
+.mob-drawer-close{background:transparent;border:none;color:rgba(255,255,255,.6);font-size:16px;cursor:pointer;padding:4px 6px;border-radius:4px;}
+.mob-drawer-pg .mob-drawer-close{color:var(--pg-meta);}
+.mob-drawer-close:hover{background:rgba(255,255,255,.15);color:white;}
+.mob-sec-list{flex:1;overflow-y:auto;padding:5px 0;}
+.mob-drawer-action{padding:10px 16px;font-size:13px;color:rgba(255,255,255,.65);cursor:pointer;border-top:1px solid rgba(255,255,255,.1);transition:all .1s;}
+.mob-drawer-pg .mob-drawer-action{color:var(--meta);border-top-color:var(--pages-border);}
+.mob-drawer-action:hover{background:rgba(255,255,255,.08);color:white;}
+.mob-drawer-pg .mob-drawer-action:hover{background:var(--pages-hover);color:var(--pg-title);}
+.mob-more-menu{position:fixed;bottom:58px;left:0;right:0;z-index:200;background:var(--modal-bg);border-top:1px solid var(--modal-border);border-radius:16px 16px 0 0;padding:8px 0 4px;box-shadow:0 -4px 24px rgba(0,0,0,.2);}
+.mob-more-item{padding:14px 20px;font-size:14.5px;color:var(--pg-title);cursor:pointer;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--hero-border);transition:background .1s;}
+.mob-more-item:hover{background:var(--btn-hover);}
+.mob-more-danger{color:#c0392b;}
+.mob-more-close{padding:14px 20px;font-size:14px;font-weight:700;color:var(--meta);text-align:center;cursor:pointer;transition:background .1s;}
+.mob-more-close:hover{background:var(--btn-hover);}
+@media(max-width:700px){
+  .rail,.sections-panel,.pages-panel,.panel-divider,#divider1,#divider2,#divider3{display:none!important;}
+  .mob-nav{display:flex;}
+  .mob-drawer{display:flex;}
+  .main{width:100%;}
+  .content-area{padding:20px 16px 80px;}
+  .topbar{padding:0 12px;height:48px;}
+  .topbar-right{gap:4px;}
+  .tb-btn{padding:5px 10px;font-size:12px;}
+  .breadcrumb{font-size:12px;}
+  .page-view-title{font-size:24px;}
+  .note-body{font-size:14.5px;}
+  .note-body h1{font-size:20px;}
+  .note-body h2{font-size:17px;}
+  .note-body h3{font-size:15px;}
+  .note-body table{font-size:13px;display:block;overflow-x:auto;}
+  .modal,.modal-wide{width:calc(100vw - 24px);max-width:none;padding:20px 18px;}
+  .modal-overlay{align-items:flex-end;padding-bottom:0;}
+  .modal{border-radius:16px 16px 0 0;}
+  .welcome{padding:24px 16px 80px;min-height:auto;}
+  .welcome h1{font-size:24px;}
+  .welcome>p{font-size:14px;}
+  .welcome-card{width:140px;}
+  .welcome-cards{gap:10px;}
+  .notes-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .note-card{padding:12px;}
+  .dictate-bar{padding:8px 12px;gap:6px;}
+  .dictate-speed input[type=range]{width:60px;}
+  .dictate-voice select{max-width:120px;}
+  .dictate-speed-label,.dictate-voice-label{display:none;}
+  .pdf-toolbar{padding:8px 10px;gap:5px;}
+  .pdf-toolbar button{padding:4px 8px;font-size:12px;}
+}
+@media(min-width:701px) and (max-width:1024px){
+  .rail{width:52px;min-width:52px;}
+  .sections-panel{width:160px;min-width:160px;}
+  .pages-panel{width:185px;min-width:185px;}
+  .rail-logo-text{font-size:8.5px;}
+  .content-area{padding:28px 32px;}
+  .page-view-title{font-size:28px;}
+  .note-body{font-size:14.5px;}
+  .notes-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+}</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="rail" id="rail">
+    <div class="rail-logo"><div class="rail-logo-text">Notes<br>Manager</div></div>
+    <div id="railNbs"></div>
+    <div class="rail-divider"></div>
+    <div class="rail-add tip" data-tip="New Notebook" onclick="openAddNotebook()">＋</div>
+    <div class="rail-spacer"></div>
+    <div class="rail-bottom">
+      <div class="rail-icon-btn tip" data-tip="Toggle Dark Mode" onclick="toggleDark()" id="railDarkBtn">🌙<span>Theme</span></div>
+      <div class="rail-icon-btn tip" data-tip="Save (.notesbook)" onclick="saveNotesbook()">💾<span>Save</span></div>
+      <div class="rail-icon-btn tip" data-tip="Load (.notesbook)" onclick="openImportModal()">📂<span>Load</span></div>
+      <div class="rail-icon-btn tip" data-tip="About Notes Manager" onclick="openAboutModal()">ℹ️<span>About</span></div>
+    </div>
+  </div>
+  <div id="toggleRail" class="tip" data-tip="Toggle rail" onclick="collapseRail()">◀</div>
+
+  <div class="sections-panel" id="secPanel">
+    <div class="sec-header"><div class="sec-nb-name" id="secNbName">—</div></div>
+    <div class="sec-list" id="secList"></div>
+    <div class="sec-add" onclick="openAddSection()">＋ &nbsp;Add section</div>
+    <div class="sec-bottom">
+      <div class="sec-btn" onclick="saveNotesbook()" title="Save">💾</div>
+      <div class="sec-btn" onclick="openImportModal()" title="Load">📂</div>
+      <div class="sec-btn" onclick="collapseSecPanel()" title="Hide sections">◀ Sec</div>
+      <div class="sec-btn" id="secBtnTogglePages" onclick="collapsePages()" title="Toggle pages">📄 Pg</div>
+    </div>
+  </div>
+
+  <div class="pages-panel" id="pagesPanel">
+    <div class="pages-header">
+      <div class="pages-dot" id="pagesDot"></div>
+      <div class="pages-sec-name" id="pagesSecName">—</div>
+    </div>
+    <div class="pages-list" id="pagesList"></div>
+    <div class="pages-add" onclick="triggerUpload()">＋ &nbsp;Add page</div>
+    <div class="panel-toggle tip" id="togglePages" data-tip="Hide pages list" onclick="collapsePages()">◀</div>
+  </div>
+
+  <main class="main" id="mainContent">
+    <div class="topbar" id="topbar">
+      <button class="hamburger hidden" id="hamburger" onclick="restoreAllPanels()">☰</button>
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div class="topbar-right" id="topbarRight"></div>
+    </div>
+    <div class="content-scroll" id="contentScroll">
+      <div class="content-area" id="contentArea">
+        <div class="init-loading"><div class="spinner"></div><p>Loading…</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<input type="file" id="fileInput" accept=".docx,.pdf,.one" multiple style="display:none" onchange="onFileSelect(event)">
+<input type="file" id="nbFileInput" accept=".notesbook,.json" style="display:none" onchange="onNbFileSelect(event)">
+
+<!-- ADD NOTEBOOK -->
+<div class="modal-overlay" id="modalNotebook" style="display:none" onclick="closeBg('modalNotebook',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>📓 New Notebook</h3>
+    <div class="modal-label">Icon</div>
+    <div class="emoji-grid" id="nbEmojiGrid"></div>
+    <div class="modal-label">Name</div>
+    <input id="nbNameInput" type="text" placeholder="e.g. Biology…" onkeydown="if(event.key==='Enter')confirmAddNotebook()">
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modalNotebook')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddNotebook()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SECTION -->
+<div class="modal-overlay" id="modalSection" style="display:none" onclick="closeBg('modalSection',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>🗂 New Section</h3>
+    <div class="modal-label">Color</div>
+    <div class="color-picker" id="secColorPicker"></div>
+    <div class="modal-label">Name</div>
+    <input id="secNameInput" type="text" placeholder="e.g. Chapter 1…" onkeydown="if(event.key==='Enter')confirmAddSection()">
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modalSection')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddSection()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="modal-overlay" id="modalUpload" style="display:none" onclick="closeBg('modalUpload',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>📄 Add Page</h3>
+    <div class="modal-label">File(s)</div>
+    <div class="upload-filelist" id="uploadFileList"></div>
+    <div class="modal-label">Notebook</div>
+    <select id="uploadNbSel" onchange="onUploadNbChange()"></select>
+    <div class="modal-label">Section</div>
+    <select id="uploadSecSel" onchange="onUploadSecChange()"></select>
+    <div id="uploadNewSecRow" style="display:none">
+      <div class="modal-label">New Section Name</div>
+      <input id="uploadNewSecName" type="text" placeholder="e.g. Chapter 1">
+    </div>
+    <div id="uploadProgress" style="display:none">
+      <div class="progress-bar-wrap"><div class="progress-bar" id="uploadProgressBar"></div></div>
+      <div class="progress-label" id="uploadProgressLabel">Processing…</div>
+    </div>
+    <div class="modal-footer" id="uploadFooter">
+      <button class="btn" onclick="closeModal('modalUpload')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmUpload()">Add Page</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="modal-overlay" id="modalImport" style="display:none" onclick="closeBg('modalImport',event)">
+  <div class="modal modal-wide" onclick="event.stopPropagation()">
+    <h3>📂 Load Notebook</h3>
+    <div id="importStep1">
+      <div class="import-drop" id="importDrop"
+        onclick="document.getElementById('nbFileInput').click()"
+        ondragover="onImportDragOver(event)" ondragleave="onImportDragLeave()" ondrop="onImportDrop(event)">
+        <div class="id-icon">📁</div>
+        <p><strong>Choose a .notesbook file</strong><br>or drag and drop here</p>
+      </div>
+      <div class="modal-footer"><button class="btn" onclick="closeModal('modalImport')">Cancel</button></div>
+    </div>
+    <div id="importStep2" style="display:none">
+      <div class="import-info" id="importInfo"></div>
+      <div class="modal-label">Import Mode</div>
+      <div class="radio-row" id="importModeRow">
+        <label class="radio-opt selected" onclick="selectImportMode('merge',this)">
+          <input type="radio" name="importMode" value="merge" checked>
+          <div><div class="radio-opt-label">Merge</div><div class="radio-opt-desc">Add imported notebooks alongside existing ones.</div></div>
+        </label>
+        <label class="radio-opt" onclick="selectImportMode('replace',this)">
+          <input type="radio" name="importMode" value="replace">
+          <div><div class="radio-opt-label">Replace</div><div class="radio-opt-desc">Wipe everything and load from file. Cannot be undone.</div></div>
+        </label>
+      </div>
+      <div class="import-warn" id="importWarn" style="display:none">⚠️ Replace will delete all current data.</div>
+      <div id="importProgress" style="display:none">
+        <div class="progress-bar-wrap"><div class="progress-bar" id="importProgressBar"></div></div>
+        <div class="progress-label" id="importProgressLabel">Importing…</div>
+      </div>
+      <div class="modal-footer" id="importFooter">
+        <button class="btn" onclick="resetImportModal()">← Back</button>
+        <button class="btn" onclick="closeModal('modalImport')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmImport()">Load</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="modal-overlay" id="modalConfirm" style="display:none" onclick="closeBg('modalConfirm',event)">
+  <div class="modal" style="max-width:380px" onclick="event.stopPropagation()">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmMsg" style="font-size:14px;color:var(--meta);margin-bottom:20px;line-height:1.5"></p>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modalConfirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT MODAL -->
+<div class="modal-overlay" id="modalAbout" style="display:none" onclick="closeBg('modalAbout',event)">
+  <div class="modal about-modal" onclick="event.stopPropagation()">
+    <div class="about-header">
+      <div class="about-logo">📚</div>
+      <div>
+        <h2 class="about-app-name">Notes Manager</h2>
+        <div class="about-version" id="aboutVersion">v1.0.0</div>
+      </div>
+    </div>
+    <p class="about-tagline">A OneNote-style local notes manager — organize .docx, .pdf, and .one files into Notebooks, Sections, and Pages. Everything stored on your device.</p>
+    <div class="about-divider"></div>
+    <div class="about-creator">
+      <div class="about-field"><span class="about-field-label">Creator</span><span class="about-field-value">Kevin Jose</span></div>
+      <div class="about-field"><span class="about-field-label">GitHub</span><a class="about-link" href="https://github.com/ShadowKnight711/notes-manager" target="_blank" rel="noopener">Github</a></div>
+      <div class="about-field"><span class="about-field-label">License</span><span class="about-field-value">MIT</span></div>
+      <div class="about-field"><span class="about-field-label">Built with</span><span class="about-field-value">HTML · CSS · JS · IndexedDB · mammoth.js · pdf.js</span></div>
+    </div>
+    <div class="about-divider"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('modalAbout')">Close</button>
+    </div>
+  </div>
+</div>
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mob-nav" id="mobNav">
+  <button class="mob-tab active" id="mobTabSec" onclick="mobShowPanel('sec')">
+    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>Sections</span>
+  </button>
+  <button class="mob-tab" id="mobTabPg" onclick="mobShowPanel('pg')">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm4 18H6V4h7v5h5z"/></svg><span>Pages</span>
+  </button>
+  <button class="mob-tab" id="mobTabRead" onclick="mobShowPanel('read')">
+    <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H5v-2h7v2zm7-4H5v-2h14v2zm0-4H5V7h14v2z"/></svg><span>Read</span>
+  </button>
+  <button class="mob-tab" id="mobTabMore" onclick="mobShowPanel('more')">
+    <svg viewBox="0 0 24 24"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg><span>More</span>
+  </button>
+</nav>
+<div class="mob-overlay" id="mobOverlay" onclick="mobCloseDrawer()"></div>
+<div class="mob-drawer" id="mobDrawer">
+  <div class="mob-drawer-sec" id="mobDrawerSec">
+    <div class="mob-drawer-hdr">
+      <span id="mobDrawerNbName">Notebooks</span>
+      <button class="mob-drawer-close" onclick="mobCloseDrawer()">✕</button>
+    </div>
+    <div id="mobSecList" class="mob-sec-list"></div>
+    <div class="mob-drawer-action" onclick="openAddSection(); mobCloseDrawer();">＋ Add section</div>
+  </div>
+  <div class="mob-drawer-pg" id="mobDrawerPg" style="display:none">
+    <div class="mob-drawer-hdr">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="pages-dot" id="mobPgDot" style="width:8px;height:8px;border-radius:50%;background:#aaa;flex-shrink:0"></div>
+        <span id="mobPgSecName">Pages</span>
+      </div>
+      <button class="mob-drawer-close" onclick="mobCloseDrawer()">✕</button>
+    </div>
+    <div id="mobPgList" class="pages-list" style="flex:1;overflow-y:auto"></div>
+    <div class="mob-drawer-action" onclick="triggerUpload(); mobCloseDrawer();">＋ Add page</div>
+  </div>
+</div>
+<div class="mob-more-menu" id="mobMoreMenu" style="display:none">
+  <div class="mob-more-item" onclick="toggleDark(); closeMobMore()">🌙 <span id="mobDarkLabel">Toggle Dark Mode</span></div>
+  <div class="mob-more-item" onclick="saveNotesbook(); closeMobMore()">💾 Save Notebook</div>
+  <div class="mob-more-item" onclick="openImportModal(); closeMobMore()">📂 Load Notebook</div>
+  <div class="mob-more-item" onclick="openAddNotebook(); closeMobMore()">📓 New Notebook</div>
+  <div class="mob-more-item" onclick="openAboutModal(); closeMobMore()">ℹ️ About</div>
+  <div class="mob-more-close" onclick="closeMobMore()">Cancel</div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// NOTES MANAGER v1.0.0
+// Storage: IndexedDB  |  No dictation
+// No reset button  |  No startup safety
+// Old edge-tab collapse  |  Old merge
+// ═══════════════════════════════════════
+
+/* ═══════════════════════════════════════════
+   NOTES MANAGER — app.js
+   Storage: IndexedDB (no size limit issues)
+   v2.3.11 Features: dark mode, arrow-divider panels,
+             .docx / .pdf / .one import (text or image mode),
+             dictate/read-aloud with word highlight,
+             .notesbook save/load
+═══════════════════════════════════════════ */
+
+'use strict';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ── CONSTANTS ── */
+const APP_VERSION = 'v1.0.0';
+const DB_NAME    = 'NotesManagerDB';
+const DB_VERSION = 2;
+const STORE_META = 'meta';       // notebooks, sections, ui prefs
+const STORE_PAGES= 'pages';      // each page (html/pdfData/oneText) stored separately
+
+const EMOJIS = ['📓','📚','🧬','⚗️','📐','🗺️','💻','📝','🎯','🌍','🔬','📊','🎨','🏛️','⚡','🌿','🔭','🧪','🧮','📖'];
+const COLORS  = ['#e74c3c','#e67e22','#f39c12','#2ecc71','#1abc9c','#3498db','#9b59b6','#e91e63','#00bcd4','#8bc34a','#ff5722','#607d8b'];
+
+/* ── APP STATE ── */
+let db; // IndexedDB instance
+let notebooks = [];
+let sections  = [];
+let pagesIndex= []; // lightweight: {id,secId,title,filename,type,date} — NO content
+let ui = { nb:null, sec:null, page:null, dark:false, railCollapsed:false, secCollapsed:false, pagesCollapsed:false };
+
+let pendingFiles = [];
+let chosenNbEmoji = '📓', chosenSecColor = COLORS[5];
+let pendingImportData = null;
+let pdfDoc = null, pdfScale = 1.4, pdfCurPage = 1, pdfAllMode = false;
+let currentPageContent = null; // cached full page object
+
+/* ═══════════════════════════════════════════
+   INDEXEDDB
+═══════════════════════════════════════════ */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE_META))  d.createObjectStore(STORE_META,  { keyPath: 'key' });
+      if (!d.objectStoreNames.contains(STORE_PAGES)) d.createObjectStore(STORE_PAGES, { keyPath: 'id' });
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbPut(store, value) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(value);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbDeleteMany(store, keys) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const os = tx.objectStore(store);
+    let done = 0;
+    if (!keys.length) { res(); return; }
+    keys.forEach(k => {
+      const req = os.delete(k);
+      req.onsuccess = () => { if (++done === keys.length) res(); };
+      req.onerror   = () => rej(req.error);
+    });
+  });
+}
+
+/* Save in-memory state (notebooks, sections, index, ui) to IDB */
+async function persistMeta() {
+  await dbPut(STORE_META, { key: 'notebooks', value: notebooks });
+  await dbPut(STORE_META, { key: 'sections',  value: sections  });
+  await dbPut(STORE_META, { key: 'pagesIndex',value: pagesIndex});
+  await dbPut(STORE_META, { key: 'ui',        value: ui        });
+}
+
+async function loadMeta() {
+  const nb  = await dbGet(STORE_META, 'notebooks');
+  const sec = await dbGet(STORE_META, 'sections');
+  const pi  = await dbGet(STORE_META, 'pagesIndex');
+  const u   = await dbGet(STORE_META, 'ui');
+  if (nb)  notebooks  = nb.value  || [];
+  if (sec) sections   = sec.value || [];
+  if (pi)  pagesIndex = pi.value  || [];
+  if (u)   ui         = { ...ui, ...u.value };
+}
+
+/* ── UTILS ── */
+function uid() { return '_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(d) { return new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}); }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, type='info', duration=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE
+═══════════════════════════════════════════ */
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', ui.dark ? 'dark' : 'light');
+  const icon = ui.dark ? '☀️' : '🌙';
+  const rb = document.getElementById('railDarkBtn');
+  if (rb) rb.innerHTML = icon + '<span>Theme</span>';
+  const tb = document.getElementById('topDarkBtn');
+  if (tb) tb.textContent = icon;
+  const ml = document.getElementById('mobDarkLabel');
+  if (ml) ml.textContent = ui.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+}
+function toggleDark() { ui.dark = !ui.dark; persistMeta(); applyTheme(); }
+
+/* ═══════════════════════════════════════════
+   PANEL COLLAPSE
+═══════════════════════════════════════════ */
+function applyCollapse() {
+  const rail = document.getElementById('rail');
+  const tr   = document.getElementById('toggleRail');
+  const sp   = document.getElementById('secPanel');
+  const pp   = document.getElementById('pagesPanel');
+  const tp   = document.getElementById('togglePages');
+  const ham  = document.getElementById('hamburger');
+  const secBtnPg = document.getElementById('secBtnTogglePages');
+  rail.classList.toggle('collapsed', ui.railCollapsed);
+  if (tr) { tr.textContent = ui.railCollapsed ? '▶' : '◀'; tr.style.left = ui.railCollapsed ? '0' : '58px'; }
+  sp.classList.toggle('collapsed', ui.secCollapsed);
+  pp.classList.toggle('collapsed', ui.pagesCollapsed);
+  if (tp) tp.textContent = ui.pagesCollapsed ? '▶' : '◀';
+  if (secBtnPg) secBtnPg.textContent = ui.pagesCollapsed ? '📄 ▶' : '📄 Pg';
+  const allHidden = ui.railCollapsed && ui.secCollapsed && ui.pagesCollapsed;
+  if (ham) ham.classList.toggle('hidden', !allHidden);
+}
+function collapseRail()     { ui.railCollapsed  = !ui.railCollapsed;  persistMeta(); applyCollapse(); }
+function collapseSecPanel() { ui.secCollapsed   = !ui.secCollapsed;   persistMeta(); applyCollapse(); }
+function collapsePages()    { ui.pagesCollapsed = !ui.pagesCollapsed; persistMeta(); applyCollapse(); }
+function restoreAllPanels() { ui.railCollapsed = ui.secCollapsed = ui.pagesCollapsed = false; persistMeta(); applyCollapse(); }
+
+/* ═══════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════ */
+function render() { renderRail(); renderSections(); renderPages(); renderMain(); }
+
+function renderRail() {
+  document.getElementById('railNbs').innerHTML = notebooks.map(nb => `
+    <div class="rail-nb tip ${ui.nb===nb.id?'active':''}" data-tip="${esc(nb.name)}" onclick="selectNb('${nb.id}')">
+      <div class="rail-nb-icon">${nb.icon}</div>
+      <div class="rail-nb-label">${esc(nb.name.length>7 ? nb.name.slice(0,6)+'…' : nb.name)}</div>
+    </div>`).join('');
+}
+
+function renderSections() {
+  const nb = notebooks.find(n => n.id === ui.nb);
+  document.getElementById('secNbName').textContent = nb ? nb.name : 'Select notebook';
+  const secs = sections.filter(s => s.nbId === ui.nb);
+  document.getElementById('secList').innerHTML = secs.length
+    ? secs.map(s => `
+      <div class="sec-row ${ui.sec===s.id?'active':''}" onclick="selectSec('${s.id}')">
+        <div class="sec-colorbar" style="background:${s.color}"></div>
+        <div class="sec-name">${esc(s.name)}</div>
+        <span class="sec-del" onclick="confirmDel('section','${s.id}',event)">✕</span>
+      </div>`).join('')
+    : `<div style="font-size:12px;color:rgba(255,255,255,.4);padding:12px 16px;font-style:italic">${ui.nb?'No sections yet.':'Select a notebook first.'}</div>`;
+}
+
+function renderPages() {
+  const sec = sections.find(s => s.id === ui.sec);
+  document.getElementById('pagesDot').style.background = sec ? sec.color : '#aaa';
+  document.getElementById('pagesSecName').textContent  = sec ? sec.name  : (ui.nb ? 'Select section' : '—');
+  const pgs = pagesIndex.filter(p => p.secId === ui.sec);
+  document.getElementById('pagesList').innerHTML = pgs.length
+    ? pgs.map(pg => `
+      <div class="pg-row ${ui.page===pg.id?'active':''}" onclick="selectPage('${pg.id}')">
+        <div class="pg-inner">
+          <div class="pg-title">${esc(pg.title)}</div>
+          <div class="pg-date">${pg.date}</div>
+          <span class="pg-chip chip-${pg.type}">${pg.type.toUpperCase()}</span>
+        </div>
+        <span class="pg-del" onclick="confirmDel('page','${pg.id}',event)">✕</span>
+      </div>`).join('')
+    : `<div style="font-size:12px;color:var(--meta);padding:12px 14px;font-style:italic">${ui.sec?'No pages yet.':'—'}</div>`;
+}
+
+function mkDarkBtn() {
+  return `<div class="dark-toggle-btn tip" data-tip="Toggle theme" onclick="toggleDark()" id="topDarkBtn">${ui.dark?'☀️':'🌙'}</div>`;
+}
+
+function renderMain() {
+  const bc = document.getElementById('breadcrumb');
+  const tr = document.getElementById('topbarRight');
+  const ca = document.getElementById('contentArea');
+  const nb  = notebooks.find(n => n.id === ui.nb);
+  const sec = sections.find(s  => s.id === ui.sec);
+  const pgMeta = pagesIndex.find(p => p.id === ui.page);
+
+  if (!ui.nb) {
+    bc.innerHTML = `<span class="bc-cur">Home</span>`;
+    tr.innerHTML = mkDarkBtn() + `<button class="tb-btn tb-btn-primary" onclick="openAddNotebook()">＋ New Notebook</button>`;
+    ca.innerHTML = `
+      <div class="welcome">
+        <div class="welcome-logo">📚</div>
+        <h1>Notes Manager</h1>
+        <p>OneNote-style notebooks with Sections and Pages.<br>Upload .docx, .pdf, or .one files — no size limits.</p>
+        <div class="welcome-cards">
+          <div class="welcome-card" onclick="openAddNotebook()"><div class="wc-icon">📓</div><div class="wc-title">New Notebook</div><div class="wc-desc">Create a notebook for a subject</div></div>
+          <div class="welcome-card" onclick="openImportModal()"><div class="wc-icon">📂</div><div class="wc-title">Load Notebook</div><div class="wc-desc">Open a .notesbook backup</div></div>
+          <div class="welcome-card" onclick="triggerUpload()"><div class="wc-icon">⬆</div><div class="wc-title">Upload File</div><div class="wc-desc">.docx, .pdf, or .one</div></div>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="step-lbl">Step 1</div><p>Create a Notebook (e.g. Biology)</p></div>
+          <div class="step"><div class="step-lbl">Step 2</div><p>Add Sections (e.g. Chapter 1)</p></div>
+          <div class="step"><div class="step-lbl">Step 3</div><p>Upload .docx / .pdf / .one pages</p></div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (ui.nb && !ui.sec) {
+    bc.innerHTML = `<span class="bc-cur">${nb.icon} ${esc(nb.name)}</span>`;
+    tr.innerHTML = mkDarkBtn() +
+      `<button class="tb-btn tb-btn-danger" onclick="confirmDel('notebook','${nb.id}')">🗑</button>
+       <button class="tb-btn" onclick="openAddSection()">＋ Section</button>`;
+    const secs = sections.filter(s => s.nbId === ui.nb);
+    const pgCount = pagesIndex.filter(p => secs.some(s => s.id === p.secId)).length;
+    ca.innerHTML = `
+      <div class="overview-hero">
+        <div style="font-size:50px;margin-bottom:10px">${nb.icon}</div>
+        <h1>${esc(nb.name)}</h1>
+        <div class="meta">${secs.length} section${secs.length!==1?'s':''} · ${pgCount} page${pgCount!==1?'s':''}</div>
+      </div>
+      ${secs.length
+        ? `<div class="notes-grid">${secs.map(s => {
+            const cnt = pagesIndex.filter(p => p.secId === s.id).length;
+            return `<div class="note-card" onclick="selectSec('${s.id}')">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+                <div style="width:11px;height:11px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+                <span style="font-size:10px;color:var(--meta);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Section</span>
+              </div>
+              <div class="nc-title">${esc(s.name)}</div>
+              <div class="nc-date">${cnt} page${cnt!==1?'s':''}</div>
+            </div>`;}).join('')}</div>`
+        : `<div class="empty-state"><h2>No sections yet</h2><p>Sections organize your pages by topic.</p><button class="btn btn-primary" onclick="openAddSection()">＋ Add Section</button></div>`}`;
+    return;
+  }
+
+  if (ui.sec && !ui.page) {
+    bc.innerHTML = `<span class="bc-link" onclick="selectNb('${nb.id}')">${nb.icon} ${esc(nb.name)}</span><span class="bc-sep"> › </span><span class="bc-cur">${esc(sec.name)}</span>`;
+    tr.innerHTML = mkDarkBtn() +
+      `<button class="tb-btn tb-btn-danger" onclick="confirmDel('section','${sec.id}')">🗑</button>
+       <button class="tb-btn tb-btn-primary" onclick="triggerUpload()">⬆ Add Page</button>`;
+    const pgs = pagesIndex.filter(p => p.secId === ui.sec);
+    ca.innerHTML = `
+      <div class="overview-hero" style="display:flex;align-items:flex-start;gap:14px">
+        <div style="width:13px;height:13px;border-radius:50%;background:${sec.color};margin-top:9px;flex-shrink:0"></div>
+        <div><h1>${esc(sec.name)}</h1><div class="meta">${pgs.length} page${pgs.length!==1?'s':''}</div></div>
+      </div>
+      ${pgs.length
+        ? `<div class="notes-grid">${pgs.map(pg => `
+            <div class="note-card" onclick="selectPage('${pg.id}')">
+              <span class="nc-chip chip-${pg.type}">${pg.type.toUpperCase()}</span>
+              <div class="nc-icon">${pg.type==='pdf'?'📕':pg.type==='one'?'📋':'📄'}</div>
+              <div class="nc-title" title="${esc(pg.title)}">${esc(pg.title)}</div>
+              <div class="nc-date">${pg.date}</div>
+            </div>`).join('')}</div>`
+        : `<div class="empty-state"><h2>No pages yet</h2><p>Upload a .docx, .pdf, or .one file.</p><button class="btn btn-primary" onclick="triggerUpload()">⬆ Upload</button></div>`}`;
+    return;
+  }
+
+  if (ui.page && pgMeta) {
+    bc.innerHTML = `
+      <span class="bc-link" onclick="selectNb('${nb.id}')">${nb.icon} ${esc(nb.name)}</span>
+      <span class="bc-sep"> › </span>
+      <span class="bc-link" onclick="selectSec('${sec.id}')">${esc(sec.name)}</span>
+      <span class="bc-sep"> › </span>
+      <span class="bc-cur">${esc(pgMeta.title)}</span>`;
+    tr.innerHTML = mkDarkBtn() +
+`<button class="tb-btn tb-btn-danger" onclick="confirmDel('page','${pgMeta.id}')">🗑 Delete</button>`;
+    ca.innerHTML = `
+      <div class="page-view-header">
+        <div class="page-badge" style="background:${sec.color}22;color:${sec.color}" onclick="selectSec('${sec.id}')">${esc(sec.name)}</div>
+        <div class="page-view-title">${esc(pgMeta.title)}</div>
+        <div class="page-view-meta">
+          <span>📅 ${pgMeta.date}</span>
+          <span>📄 ${esc(pgMeta.filename)}</span>
+          <span class="file-chip chip-${pgMeta.type === 'one-image' ? 'one' : pgMeta.type}">${pgMeta.type === 'one-image' ? 'ONE IMG' : pgMeta.type.toUpperCase()}</span>
+        </div>
+      </div>
+      <div id="pageContent"><div class="pdf-loading">Loading content…</div></div>`;
+
+    // Load full content from IDB
+    dbGet(STORE_PAGES, pgMeta.id).then(pg => {
+      currentPageContent = pg;
+      const el = document.getElementById('pageContent');
+      if (!el) return;
+      if (!pg) { el.innerHTML = '<p style="color:var(--meta);font-style:italic">Content not found.</p>'; return; }
+      if (pg.type === 'pdf')  renderPdf(pg);
+      else if (pg.type === 'one') renderOne(pg);
+      else el.innerHTML = `<div class="note-body">${pg.html || '<p style="color:var(--meta);font-style:italic">No content.</p>'}</div>`;
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PDF RENDERER
+═══════════════════════════════════════════ */
+async function renderPdf(pg) {
+  const el = document.getElementById('pageContent');
+  el.innerHTML = `<div class="pdf-loading">⏳ Loading PDF…</div>`;
+  try {
+    const raw = atob(pg.pdfData), arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    pdfDoc = await pdfjsLib.getDocument({ data: arr }).promise;
+    pdfScale = 1.4; pdfCurPage = 1; pdfAllMode = false;
+    el.innerHTML = `
+      <div class="pdf-toolbar">
+        <button onclick="pdfPrev()">◀ Prev</button>
+        <span class="pdf-pg-info" id="pdfPgInfo">1 / ${pdfDoc.numPages}</span>
+        <button onclick="pdfNext()">Next ▶</button>
+        <button onclick="pdfAllPages()" style="margin-left:4px">All Pages</button>
+        <div class="pdf-zoom">
+          <button onclick="pdfZoom(-0.2)">－</button>
+          <span id="pdfZoomLbl">${Math.round(pdfScale*100)}%</span>
+          <button onclick="pdfZoom(0.2)">＋</button>
+        </div>
+      </div>
+      <div class="pdf-pages" id="pdfPages"></div>`;
+    pdfRenderPage(1);
+  } catch(e) { el.innerHTML = `<p style="color:#c0392b">Failed to render PDF: ${esc(e.message)}</p>`; }
+}
+async function pdfRenderPage(n) {
+  const c = document.getElementById('pdfPages'); if (!c) return;
+  c.innerHTML = '<div class="pdf-loading">Rendering…</div>';
+  const page = await pdfDoc.getPage(n);
+  const vp = page.getViewport({ scale: pdfScale });
+  const wrap = document.createElement('div'); wrap.className = 'pdf-canvas-wrap';
+  const canvas = document.createElement('canvas'); canvas.width = vp.width; canvas.height = vp.height;
+  wrap.appendChild(canvas); c.innerHTML = ''; c.appendChild(wrap);
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  const pi = document.getElementById('pdfPgInfo'); if (pi) pi.textContent = `${n} / ${pdfDoc.numPages}`;
+}
+async function pdfAllPages() {
+  pdfAllMode = true;
+  const c = document.getElementById('pdfPages'); c.innerHTML = '<div class="pdf-loading">Rendering all pages…</div>';
+  const items = [];
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i), vp = page.getViewport({ scale: pdfScale });
+    const wrap = document.createElement('div'); wrap.className = 'pdf-canvas-wrap';
+    const canvas = document.createElement('canvas'); canvas.width = vp.width; canvas.height = vp.height;
+    wrap.appendChild(canvas); items.push({ wrap, page, vp, canvas });
+  }
+  c.innerHTML = '';
+  for (const { wrap, page, vp, canvas } of items) {
+    c.appendChild(wrap);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  }
+}
+function pdfPrev() { if (pdfCurPage > 1) { pdfCurPage--; pdfRenderPage(pdfCurPage); } }
+function pdfNext() { if (pdfCurPage < pdfDoc.numPages) { pdfCurPage++; pdfRenderPage(pdfCurPage); } }
+function pdfZoom(d) {
+  pdfScale = Math.max(.4, Math.min(3.5, pdfScale + d));
+  const l = document.getElementById('pdfZoomLbl'); if (l) l.textContent = Math.round(pdfScale*100) + '%';
+  if (pdfAllMode) pdfAllPages(); else pdfRenderPage(pdfCurPage);
+}
+
+/* ═══════════════════════════════════════════
+   ONENOTE RENDERER
+═══════════════════════════════════════════ */
+function renderOne(pg) {
+  const el = document.getElementById('pageContent');
+  const lines = (pg.oneText || '').split('\n').filter(l => l.trim());
+  const html = lines.map(l => {
+    const t = l.trim();
+    return t.length < 80 && !t.includes('.')
+      ? `<h3 style="margin:1em 0 .3em;font-size:16px;font-weight:700;color:var(--pg-title)">${esc(t)}</h3>`
+      : `<p style="margin:.4em 0;line-height:1.7">${esc(t)}</p>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="one-notice">📋 <div><strong>OneNote file</strong> — Raw text extracted from the .one binary. For best results, export from OneNote as PDF or DOCX first.</div></div>
+    <div class="one-preview">
+      <h3>Extracted Content</h3>
+      <div class="note-body" style="font-size:14.5px">${html || '<p style="color:var(--meta);font-style:italic">No readable text could be extracted.</p>'}</div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function selectNb(id) { ui.nb = id; ui.sec = null; ui.page = null; persistMeta(); dictateStop(); document.getElementById('dictateBar').classList.remove('active'); render(); }
+function selectSec(id) {
+  const s = sections.find(x => x.id === id);
+  if (s) { ui.nb = s.nbId; ui.sec = id; ui.page = null; }
+  dictateStop(); document.getElementById('dictateBar').classList.remove('active');
+  persistMeta(); render(); scrollTop();
+}
+function selectPage(id) {
+  const pg = pagesIndex.find(p => p.id === id);
+  if (pg) { const s = sections.find(x => x.id === pg.secId); if (s) ui.nb = s.nbId; ui.sec = pg.secId; ui.page = id; }
+  persistMeta(); render(); scrollTop();
+}
+function scrollTop() { document.getElementById('contentScroll').scrollTop = 0; }
+
+/* ═══════════════════════════════════════════
+   DELETE (with confirm dialog)
+═══════════════════════════════════════════ */
+function confirmDel(type, id, e) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  let title, msg;
+  if (type === 'notebook') {
+    const nb = notebooks.find(n => n.id === id);
+    const sids = sections.filter(s => s.nbId === id).map(s => s.id);
+    const cnt  = pagesIndex.filter(p => sids.includes(p.secId)).length;
+    title = `Delete Notebook`;
+    msg   = `Delete "${nb?.name}" including ${sids.length} section(s) and ${cnt} page(s)? This cannot be undone.`;
+  } else if (type === 'section') {
+    const sec = sections.find(s => s.id === id);
+    const cnt = pagesIndex.filter(p => p.secId === id).length;
+    title = `Delete Section`;
+    msg   = `Delete "${sec?.name}" and its ${cnt} page(s)? This cannot be undone.`;
+  } else {
+    const pg = pagesIndex.find(p => p.id === id);
+    title = `Delete Page`;
+    msg   = `Delete "${pg?.title}"? This cannot be undone.`;
+  }
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent   = msg;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.onclick = () => { closeModal('modalConfirm'); doDelete(type, id); };
+  document.getElementById('modalConfirm').style.display = 'flex';
+}
+
+async function doDelete(type, id) {
+  if (type === 'notebook') {
+    const sids = sections.filter(s => s.nbId === id).map(s => s.id);
+    const pids = pagesIndex.filter(p => sids.includes(p.secId)).map(p => p.id);
+    await dbDeleteMany(STORE_PAGES, pids);
+    pagesIndex = pagesIndex.filter(p => !sids.includes(p.secId));
+    sections   = sections.filter(s => s.nbId !== id);
+    notebooks  = notebooks.filter(n => n.id !== id);
+    if (ui.nb === id) { ui.nb = null; ui.sec = null; ui.page = null; }
+    toast(`Notebook deleted`, 'info');
+  } else if (type === 'section') {
+    const pids = pagesIndex.filter(p => p.secId === id).map(p => p.id);
+    await dbDeleteMany(STORE_PAGES, pids);
+    pagesIndex = pagesIndex.filter(p => p.secId !== id);
+    sections   = sections.filter(s => s.id !== id);
+    if (ui.sec === id) { ui.sec = null; ui.page = null; }
+    toast(`Section deleted`, 'info');
+  } else {
+    await dbDelete(STORE_PAGES, id);
+    pagesIndex = pagesIndex.filter(p => p.id !== id);
+    if (ui.page === id) ui.page = null;
+    toast(`Page deleted`, 'info');
+  }
+  await persistMeta();
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   ADD NOTEBOOK
+═══════════════════════════════════════════ */
+function openAddNotebook() {
+  chosenNbEmoji = '📓';
+  document.getElementById('nbNameInput').value = '';
+  document.getElementById('nbEmojiGrid').innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt${e===chosenNbEmoji?' selected':''}" onclick="pickNbEmoji('${e}',this)">${e}</div>`).join('');
+  document.getElementById('modalNotebook').style.display = 'flex';
+  setTimeout(() => document.getElementById('nbNameInput').focus(), 60);
+}
+function pickNbEmoji(e, el) {
+  chosenNbEmoji = e;
+  document.querySelectorAll('#nbEmojiGrid .emoji-opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+}
+async function confirmAddNotebook() {
+  const name = document.getElementById('nbNameInput').value.trim();
+  if (!name) { document.getElementById('nbNameInput').focus(); return; }
+  const nb = { id: uid(), name, icon: chosenNbEmoji };
+  notebooks.push(nb);
+  ui.nb = nb.id; ui.sec = null; ui.page = null;
+  await persistMeta();
+  render(); closeModal('modalNotebook');
+  toast(`Notebook "${name}" created`, 'success');
+}
+
+/* ═══════════════════════════════════════════
+   ADD SECTION
+═══════════════════════════════════════════ */
+function openAddSection() {
+  if (!ui.nb) { toast('Select a notebook first.', 'error'); return; }
+  chosenSecColor = COLORS[sections.filter(s => s.nbId === ui.nb).length % COLORS.length];
+  document.getElementById('secNameInput').value = '';
+  document.getElementById('secColorPicker').innerHTML = COLORS.map(c =>
+    `<div class="color-opt${c===chosenSecColor?' selected':''}" style="background:${c}" onclick="pickSecColor('${c}',this)"></div>`).join('');
+  document.getElementById('modalSection').style.display = 'flex';
+  setTimeout(() => document.getElementById('secNameInput').focus(), 60);
+}
+function pickSecColor(c, el) {
+  chosenSecColor = c;
+  document.querySelectorAll('#secColorPicker .color-opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+}
+async function confirmAddSection() {
+  const name = document.getElementById('secNameInput').value.trim();
+  if (!name) { document.getElementById('secNameInput').focus(); return; }
+  const sec = { id: uid(), nbId: ui.nb, name, color: chosenSecColor };
+  sections.push(sec);
+  ui.sec = sec.id; ui.page = null;
+  await persistMeta();
+  render(); closeModal('modalSection');
+  toast(`Section "${name}" created`, 'success');
+}
+
+/* ═══════════════════════════════════════════
+   FILE UPLOAD
+═══════════════════════════════════════════ */
+function triggerUpload() { document.getElementById('fileInput').click(); }
+
+function onFileSelect(e) {
+  pendingFiles = Array.from(e.target.files).filter(f => f.name.match(/\.(docx|pdf|one)$/i));
+  e.target.value = '';
+  if (pendingFiles.length) openUploadModal();
+  else toast('Only .docx, .pdf, .one files are supported.', 'error');
+}
+
+function openUploadModal() {
+  const nbSel = document.getElementById('uploadNbSel');
+  nbSel.innerHTML = notebooks.length
+    ? notebooks.map(n => `<option value="${n.id}">${n.icon} ${esc(n.name)}</option>`).join('')
+    : `<option value="">— Create a notebook first —</option>`;
+  if (ui.nb) nbSel.value = ui.nb;
+  populateUploadSecSel();
+  document.getElementById('uploadFileList').innerHTML = pendingFiles.map(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const size = (f.size / 1024 / 1024).toFixed(1);
+    return `${ext==='pdf'?'📕':ext==='one'?'📋':'📄'} <strong>${esc(f.name)}</strong> <span style="color:var(--meta)">(${size} MB)</span>`;
+  }).join('<br>');
+  document.getElementById('uploadProgress').style.display = 'none';
+  document.getElementById('uploadFooter').style.display = 'flex';
+  document.getElementById('modalUpload').style.display = 'flex';
+}
+
+function populateUploadSecSel() {
+  const nbId = document.getElementById('uploadNbSel').value;
+  const secSel = document.getElementById('uploadSecSel');
+  const secs = sections.filter(s => s.nbId === nbId);
+  secSel.innerHTML = `<option value="__new__">➕ New section…</option>` +
+    secs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  if (ui.sec && secs.find(s => s.id === ui.sec)) secSel.value = ui.sec;
+  onUploadSecChange();
+}
+function onUploadNbChange() { populateUploadSecSel(); }
+function onUploadSecChange() {
+  document.getElementById('uploadNewSecRow').style.display =
+    document.getElementById('uploadSecSel').value === '__new__' ? 'block' : 'none';
+}
+
+function setUploadProgress(pct, label) {
+  document.getElementById('uploadProgressBar').style.width = pct + '%';
+  document.getElementById('uploadProgressLabel').textContent = label;
+}
+
+async function confirmUpload() {
+  const nbId = document.getElementById('uploadNbSel').value;
+  if (!nbId) { toast('Create a notebook first.', 'error'); return; }
+  const secVal = document.getElementById('uploadSecSel').value;
+  let secId;
+  if (secVal === '__new__') {
+    const name = document.getElementById('uploadNewSecName').value.trim();
+    if (!name) { document.getElementById('uploadNewSecName').focus(); return; }
+    const sec = { id: uid(), nbId, name, color: COLORS[sections.filter(s => s.nbId === nbId).length % COLORS.length] };
+    sections.push(sec); secId = sec.id;
+  } else { secId = secVal; }
+
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('uploadFooter').style.display = 'none';
+
+  let lastId = null;
+  for (let i = 0; i < pendingFiles.length; i++) {
+    const file = pendingFiles[i];
+    const pct  = Math.round(((i) / pendingFiles.length) * 100);
+    setUploadProgress(pct, `Processing ${i+1}/${pendingFiles.length}: ${file.name}`);
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      let fullPage;
+      if (ext === 'pdf') {
+        const pdfData = await toBase64(file);
+        fullPage = { id: uid(), secId, title: file.name.replace(/\.pdf$/i,''), filename: file.name, type: 'pdf', pdfData, date: fmt(Date.now()) };
+      } else if (ext === 'one') {
+        const oneText = await parseOneNote(file);
+        fullPage = { id: uid(), secId, title: file.name.replace(/\.one$/i,''), filename: file.name, type: 'one', oneText, date: fmt(Date.now()) };
+      } else {
+        const html = await parseDocx(file);
+        fullPage = { id: uid(), secId, title: file.name.replace(/\.docx$/i,''), filename: file.name, type: 'docx', html, date: fmt(Date.now()) };
+      }
+      // Store full content in IDB pages store
+      await dbPut(STORE_PAGES, fullPage);
+      // Store lightweight index entry in memory
+      const { pdfData: _p, html: _h, oneText: _o, oneImages: _i, ...meta } = fullPage;
+      pagesIndex.push(meta);
+      lastId = fullPage.id;
+    } catch(err) {
+      console.error(err);
+      toast(`Failed: ${file.name} — ${err.message}`, 'error', 5000);
+    }
+  }
+  setUploadProgress(100, 'Done!');
+
+  const sec = sections.find(s => s.id === secId);
+  if (sec) { ui.nb = sec.nbId; ui.sec = secId; }
+  if (lastId) ui.page = lastId;
+  await persistMeta();
+  render();
+  closeModal('modalUpload');
+  toast(`${pendingFiles.length} page(s) added`, 'success');
+}
+
+/* ── FILE PARSERS ── */
+function parseDocx(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = async ev => {
+      try { const x = await mammoth.convertToHtml({ arrayBuffer: ev.target.result }); res(x.value); }
+      catch(e) { rej(e); }
+    };
+    r.onerror = rej; r.readAsArrayBuffer(file);
+  });
+}
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = ev => res(ev.target.result.split(',')[1]);
+    r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+async function parseOneNote(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const buf = ev.target.result, dv = new DataView(buf), u8 = new Uint8Array(buf);
+        let extracted = '', u16 = [];
+        // UTF-16LE scan — most OneNote text storage
+        for (let i = 0; i < buf.byteLength - 1; i += 2) {
+          const c = dv.getUint16(i, true);
+          if (c >= 32 && c < 0xD800) { u16.push(c); }
+          else if (c === 10 || c === 13) { if (u16.length >= 4) extracted += String.fromCharCode(...u16) + '\n'; u16 = []; }
+          else { if (u16.length >= 4) extracted += String.fromCharCode(...u16) + '\n'; u16 = []; }
+        }
+        if (u16.length >= 4) extracted += String.fromCharCode(...u16);
+        // UTF-8 printable scan fallback
+        let utf8 = '';
+        for (let i = 0; i < u8.length; i++) {
+          const c = u8[i];
+          if (c >= 32 && c < 127) utf8 += String.fromCharCode(c);
+          else if (c === 10 || c === 13) { if (utf8.length >= 4) extracted += utf8 + '\n'; utf8 = ''; }
+          else utf8 = '';
+        }
+        const lines = extracted.split('\n')
+          .map(l => l.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '').trim())
+          .filter(l => l.length >= 3 && !/^[^a-zA-Z0-9\u0900-\u097F]*$/.test(l));
+        const seen = new Set();
+        const deduped = lines.filter(l => { if (seen.has(l)) return false; seen.add(l); return true; });
+        res(deduped.join('\n') || 'No readable text could be extracted from this .one file.');
+      } catch(e) { rej(e); }
+    };
+    r.onerror = rej;
+    r.readAsArrayBuffer(file);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   SAVE / LOAD  (.notesbook)
+   Format: JSON with pages inlined (for portability)
+═══════════════════════════════════════════ */
+async function saveNotesbook() {
+  if (!notebooks.length) { toast('Nothing to save yet.', 'error'); return; }
+  toast('Preparing save file…', 'info');
+  // Pull all full pages from IDB
+  const allPages = await dbGetAll(STORE_PAGES);
+  const payload = {
+    _format: 'notesbook', _version: 4,
+    _exported: new Date().toISOString(),
+    notebooks, sections,
+    pages: allPages,  // full content
+    ui
+  };
+  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `my-notebook-${new Date().toISOString().slice(0,10)}.notesbook`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('Notebook saved!', 'success');
+}
+
+function openImportModal() { resetImportModal(); document.getElementById('modalImport').style.display = 'flex'; }
+function resetImportModal() {
+  pendingImportData = null;
+  document.getElementById('nbFileInput').value = '';
+  document.getElementById('importStep1').style.display = 'block';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importWarn').style.display = 'none';
+  document.getElementById('importProgress').style.display = 'none';
+  document.querySelectorAll('#importModeRow .radio-opt').forEach((el, i) => {
+    el.classList.toggle('selected', i === 0);
+    el.querySelector('input').checked = (i === 0);
+  });
+}
+function selectImportMode(mode, el) {
+  document.querySelectorAll('#importModeRow .radio-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('importWarn').style.display = mode === 'replace' ? 'block' : 'none';
+}
+function onImportDragOver(e) { e.preventDefault(); document.getElementById('importDrop').classList.add('dragover'); }
+function onImportDragLeave() { document.getElementById('importDrop').classList.remove('dragover'); }
+function onImportDrop(e) { e.preventDefault(); document.getElementById('importDrop').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) readNbFile(f); }
+function onNbFileSelect(e) { if (e.target.files[0]) readNbFile(e.target.files[0]); }
+
+function readNbFile(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data._format !== 'notesbook') { toast('Not a valid .notesbook file.', 'error'); return; }
+      pendingImportData = data;
+      const nbs = data.notebooks?.length || 0;
+      const pgs = data.pages?.length || 0;
+      const exp = data._exported ? new Date(data._exported).toLocaleString('en-IN') : 'Unknown';
+      document.getElementById('importInfo').innerHTML =
+        `<strong>📁 ${esc(file.name)}</strong><br>
+         ${nbs} notebook${nbs!==1?'s':''} · ${pgs} page${pgs!==1?'s':''}<br>
+         <span style="color:var(--meta);font-size:12px">Saved ${exp}</span>`;
+      document.getElementById('importStep1').style.display = 'none';
+      document.getElementById('importStep2').style.display = 'block';
+    } catch(e) { toast('Could not read file — it may be corrupted.', 'error'); }
+  };
+  r.readAsText(file);
+}
+
+async function confirmImport() {
+  if (!pendingImportData) return;
+  const mode = document.querySelector('#importModeRow input:checked')?.value || 'merge';
+  const data = pendingImportData;
+
+  document.getElementById('importProgress').style.display = 'block';
+  document.getElementById('importFooter').style.display = 'none';
+
+  const setP = (pct, lbl) => {
+    document.getElementById('importProgressBar').style.width = pct + '%';
+    document.getElementById('importProgressLabel').textContent = lbl;
+  };
+
+  // Incoming data
+  const inNotebooks = data.notebooks || [];
+  const inSections  = data.sections  || [];
+  const inPages     = data.pages     || [];
+  const nm = {}, sm = {};
+  if (mode === 'replace') {
+    setP(5, 'Clearing existing data…');
+    const existing = await dbGetAll(STORE_PAGES);
+    await dbDeleteMany(STORE_PAGES, existing.map(p => p.id));
+    notebooks  = inNotebooks.map(n => ({ ...n }));
+    sections   = inSections.map(s  => ({ ...s }));
+    pagesIndex = [];
+    const savedUi = data.ui || {};
+    ui = { ...ui, ...savedUi, dark: ui.dark };
+    inNotebooks.forEach(n => { nm[n.id] = n.id; });
+    inSections.forEach(s  => { sm[s.id] = s.id; });
+  } else {
+    (inNotebooks||[]).forEach(n => { const nid=uid(); nm[n.id]=nid; notebooks.push({...n,id:nid}); });
+    (inSections||[]).forEach(s =>  { const sid=uid(); sm[s.id]=sid; sections.push({...s,id:sid,nbId:nm[s.nbId]||s.nbId}); });
+    ui.nb=null; ui.sec=null; ui.page=null;
+    window._importSm = sm;
+  }
+  const secMap = mode==='merge' ? (window._importSm||{}) : {};
+  for (let i=0; i<inPages.length; i++) {
+    setP(10+Math.round((i/Math.max(inPages.length,1))*85), `Importing page ${i+1}/${inPages.length}…`);
+    const pg=inPages[i];
+    const newId=mode==='merge'?uid():pg.id;
+    const newSecId=mode==='merge'?(secMap[pg.secId]||pg.secId):pg.secId;
+    const fullPg={...pg,id:newId,secId:newSecId};
+    await dbPut(STORE_PAGES, fullPg);
+    const {pdfData:_p,html:_h,oneText:_o,oneImages:_i,...meta}=fullPg;
+    pagesIndex.push(meta);
+  }
+  if (mode==='merge') delete window._importSm;
+  setP(100, 'Done!');
+  await persistMeta();
+
+  render();
+  closeModal('modalImport');
+  resetImportModal();
+  document.getElementById('importProgress').style.display = 'none';
+  document.getElementById('importFooter').style.display = 'flex';
+
+  toast(`Notebook loaded — ${inPages.length} page(s) imported`, 'success');
+}
+
+/* Export removed in v2 — use 💾 Save for .notesbook format */
+
+
+
+/* ═══════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════ */
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeBg(id, e) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+/* ═══════════════════════════════════════════
+   CLEAR ALL DATA
+═══════════════════════════════════════════ */
+
+
+/* ABOUT MODAL */
+function openAboutModal() {
+  const v = document.getElementById('aboutVersion');
+  if (v && typeof APP_VERSION !== 'undefined') v.textContent = APP_VERSION;
+  document.getElementById('modalAbout').style.display = 'flex';
+}
+
+/* MOBILE NAV */
+let mobCurrentPanel = 'sec';
+function mobShowPanel(panel) {
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  const tmap = {sec:'mobTabSec',pg:'mobTabPg',read:'mobTabRead',more:'mobTabMore'};
+  const at = document.getElementById(tmap[panel]); if (at) at.classList.add('active');
+  if (panel === 'more') { mobCloseDrawer(); openMobMore(); return; }
+  if (panel === 'read') { mobCloseDrawer(); closeMobMore(); mobCurrentPanel='read'; return; }
+  mobCurrentPanel = panel; closeMobMore();
+  if (panel === 'sec') {
+    mobPopulateSections();
+    document.getElementById('mobDrawerSec').style.display = 'flex';
+    document.getElementById('mobDrawerPg').style.display  = 'none';
+  } else if (panel === 'pg') {
+    mobPopulatePages();
+    document.getElementById('mobDrawerSec').style.display = 'none';
+    document.getElementById('mobDrawerPg').style.display  = 'flex';
+  }
+  openMobDrawer();
+}
+function openMobDrawer() { document.getElementById('mobDrawer').classList.add('open'); document.getElementById('mobOverlay').classList.add('show'); }
+function mobCloseDrawer() { document.getElementById('mobDrawer').classList.remove('open'); if (!document.getElementById('mobMoreMenu') || document.getElementById('mobMoreMenu').style.display==='none') document.getElementById('mobOverlay').classList.remove('show'); }
+function openMobMore() { document.getElementById('mobMoreMenu').style.display='block'; document.getElementById('mobOverlay').classList.add('show'); }
+function closeMobMore() { const m=document.getElementById('mobMoreMenu'); if(m) m.style.display='none'; if(!document.getElementById('mobDrawer').classList.contains('open')) document.getElementById('mobOverlay').classList.remove('show'); }
+function mobPopulateSections() {
+  const nb = notebooks.find(n => n.id === ui.nb);
+  const ne = document.getElementById('mobDrawerNbName'); if(ne) ne.textContent = nb ? nb.name : 'Notebooks';
+  const secs = sections.filter(s => s.nbId === ui.nb);
+  const el = document.getElementById('mobSecList'); if(!el) return;
+  let nbSwitcher = '';
+  if (notebooks.length > 1) {
+    nbSwitcher = '<div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.1)"><select onchange="mobSwitchNb(this.value)" style="width:100%;font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:white">'
+      + notebooks.map(n => `<option value="${n.id}"${n.id===ui.nb?' selected':''}>${n.icon} ${esc(n.name)}</option>`).join('') + '</select></div>';
+  }
+  el.innerHTML = nbSwitcher + (secs.length
+    ? secs.map(s => `<div class="sec-row${ui.sec===s.id?' active':''}" onclick="mobSelectSec('${s.id}')"><div class="sec-colorbar" style="background:${s.color}"></div><div class="sec-name">${esc(s.name)}</div></div>`).join('')
+    : `<div style="font-size:12px;color:rgba(255,255,255,.4);padding:12px 16px;font-style:italic">${ui.nb?'No sections yet.':'Select a notebook first.'}</div>`);
+}
+function mobPopulatePages() {
+  const sec = sections.find(s => s.id === ui.sec);
+  const dot=document.getElementById('mobPgDot'),name=document.getElementById('mobPgSecName');
+  if(dot) dot.style.background=sec?sec.color:'#aaa';
+  if(name) name.textContent=sec?sec.name:'—';
+  const pgs=pagesIndex.filter(p=>p.secId===ui.sec);
+  const el=document.getElementById('mobPgList'); if(!el) return;
+  el.innerHTML=pgs.length
+    ?pgs.map(pg=>`<div class="pg-row${ui.page===pg.id?' active':''}" onclick="mobSelectPage('${pg.id}')"><div class="pg-inner"><div class="pg-title">${esc(pg.title)}</div><div class="pg-date">${pg.date}</div><span class="pg-chip chip-${pg.type}">${pg.type.toUpperCase()}</span></div></div>`).join('')
+    :`<div style="font-size:12px;color:var(--meta);padding:12px 14px;font-style:italic">${ui.sec?'No pages yet.':'Select a section first.'}</div>`;
+}
+function mobSwitchNb(id) { selectNb(id); mobPopulateSections(); }
+function mobSelectSec(id) {
+  selectSec(id);
+  setTimeout(()=>{
+    mobPopulatePages();
+    document.getElementById('mobDrawerSec').style.display='none';
+    document.getElementById('mobDrawerPg').style.display='flex';
+    document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+    const pt=document.getElementById('mobTabPg'); if(pt) pt.classList.add('active');
+    mobCurrentPanel='pg';
+  },80);
+}
+function mobSelectPage(id) {
+  selectPage(id); mobCloseDrawer();
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  const rt=document.getElementById('mobTabRead'); if(rt) rt.classList.add('active');
+  mobCurrentPanel='read';
+}
+function syncMobDrawer() {
+  if(window.innerWidth>700) return;
+  const d=document.getElementById('mobDrawer');
+  if(d&&d.classList.contains('open')){
+    if(mobCurrentPanel==='sec') mobPopulateSections();
+    if(mobCurrentPanel==='pg')  mobPopulatePages();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+async function init() {
+  db = await openDB();
+  await loadMeta();
+  applyTheme();
+  applyCollapse();
+  render();
+}
+
+init().catch(err => {
+  console.error('Init failed:', err);
+  document.getElementById('contentArea').innerHTML =
+    `<div style="padding:40px;color:#c0392b;text-align:center">
+      <h2>Failed to initialize</h2>
+      <p style="margin-top:8px;font-size:14px">${esc(err.message)}</p>
+      <p style="margin-top:8px;font-size:13px;color:#9b9b9b">Make sure you're opening this file via a local server or file:// URL in a modern browser.</p>
+     </div>`;
+});
+
+</script>

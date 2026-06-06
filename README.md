@@ -3,9 +3,7 @@
 > A OneNote-style local notes manager built with HTML, CSS, and JavaScript.  
 > Organize your `.docx`, `.pdf`, and `.one` files into **Notebooks → Sections → Pages** — all stored locally, no account needed.
 
-<p align="center">
-  <img src="assets/screenshot.png" alt="Notes Manager Screenshot" width="800"/>
-</p>
+
 
 ---
 
